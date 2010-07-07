@@ -1,0 +1,9 @@
+.*.swp
+.*.swo
+_build/
+blib/
+Build
+Makefile.PL
+MYMETA.yml
+cover_db/
+t/tmp/*

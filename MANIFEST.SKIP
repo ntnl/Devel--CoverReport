@@ -1,0 +1,4 @@
+cover_db
+\..*?\.swp
+\..*?\.swo
+^MYMETA.yml$

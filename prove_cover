@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+#
+# This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
+#
+# For more, see my website: http://natanael.krakow.pl/
+#
+# This is just a simple wrapper, to ease testing, when developing this module.
+# Do not use this wrapper, unless You want to hack on the Devel::CoverReport itself.
+use warnings; use strict;
+use FindBin qw( $Bin );
+
+exec '/usr/bin/perl', '-I'. $Bin . '/lib/', '--', $Bin . '/bin/prove_cover', @ARGV;
+
+# vim: fdm=marker
