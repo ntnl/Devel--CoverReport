@@ -9,9 +9,9 @@ package Devel::CoverReport::App::ProveCover;
 use strict;
 use warnings;
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
-use Devel::CoverReport 0.03;
+use Devel::CoverReport 0.04;
 
 use App::Prove 3.11;
 use Carp;
@@ -93,7 +93,7 @@ sub main { # {{{
                 formatter => 'Html',
 
                 criterion => { 'statement' => 1, 'branch' => 1, 'condition' => 1, 'path' => 1, 'subroutine' => 1, 'pod' => 1, 'time' => 1, 'runs' => 1 },
-                report    => { 'summary'   => 1, 'index'  => 1, 'coverage'  => 1, 'runs' => 1, 'run-details' => 1, },
+                report    => { 'summary'   => 1, 'index'  => 1, 'coverage'  => 1, 'runs' => 1, 'run-details' => 1, vcs => 1,},
 
                 exclude     => [],
                 exclude_dir => [],

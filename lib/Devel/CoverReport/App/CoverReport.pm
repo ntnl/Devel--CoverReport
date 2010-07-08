@@ -9,9 +9,9 @@ package Devel::CoverReport::App::CoverReport;
 use strict;
 use warnings;
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
-use Devel::CoverReport 0.03;
+use Devel::CoverReport 0.04;
 
 use Carp;
 use Getopt::Long 2.36 qw( GetOptionsFromArray );
@@ -177,6 +177,7 @@ sub cover_run_options { # {{{
             'coverage'    => 1,
             'runs'        => 1,
             'run-details' => 1,
+            'vcs'         => 1,
         },
     );
     foreach my $option (qw( report criterion )) {

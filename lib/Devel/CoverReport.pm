@@ -8,10 +8,10 @@ package Devel::CoverReport;
 
 use strict; use warnings;
 
-our $VERSION = 0.03;
+our $VERSION = 0.04;
 
-use Devel::CoverReport::DB 0.03;
-use Devel::CoverReport::Feedback 0.03;
+use Devel::CoverReport::DB 0.04;
+use Devel::CoverReport::Feedback 0.04;
 
 use Carp::Assert::More qw( assert_defined assert_hashref assert_listref );
 use Digest::MD5 qw( md5_hex );
@@ -116,6 +116,7 @@ sub new { # {{{
         'report-enabled'    => $P{'report'},
         
         'criterion-order' => [],
+        'vcs-order'       => [],
 
         exclude => {
             by_glob => _glob_to_re($P{'exclude'}),
@@ -141,7 +142,11 @@ sub new { # {{{
             files   => {},
             folders => {},
             total   => {},
-        }
+        },
+
+        # Data summarizied per each VCS commit.
+        vcs_summary => {},
+        vcs_cache   => {},
     };
 
     $self->{'cover_db_dir'} = $self->{'cover_db'};
@@ -169,6 +174,10 @@ sub new { # {{{
         if ($self->{'criterion-enabled'}->{$criterion}) {
             push @{ $self->{'criterion-order'} }, $criterion;
         }
+    }
+
+    if ($self->_do_vcs()) {
+        $self->{'vcs-order'} = [ qw( vcs_rev vcs_author ) ];
     }
 
     return $self;
@@ -220,6 +229,11 @@ sub _do_runs_report { # {{{
 sub _do_run_details_report { # {{{
     my ( $self ) = @_;
     if ($self->{'report-enabled'}->{'run-details'}) { return 1; }
+    return;
+} # }}}
+sub _do_vcs { # {{{
+    my ( $self ) = @_;
+    if ($self->{'report-enabled'}->{'vcs'}) { return 1; }
     return;
 } # }}}
 
@@ -636,12 +650,19 @@ sub analyse_digest { # {{{
     $self->{'feedback'}->progress_open("Runs");
 
     my ( $per_run_info, $hits ) = $self->_analyse_runs($structure_data->{'file'}, $runs);
+    
+    my $actual_file_path = $self->_actual_file_path($structure_data->{'file'});
 
     $self->{'feedback'}->progress_close();
+    
+    my $vcs_metadata;
+    if ($self->_do_vcs()) {
+        $vcs_metadata = $self->_get_vcs_metadata($actual_file_path);
+    }
 
     # Summaries:
     my $item_summary = $self->compute_summary($hits->{'global'});
-
+    
     # Open reports for this file.
     $self->{'formatter'}->add_report(
         code     => $digest,
@@ -666,7 +687,7 @@ sub analyse_digest { # {{{
     }
 
     # Walk trough the source file...
-    my @source_lines = read_file($self->_actual_file_path($structure_data->{'file'}));
+    my @source_lines = read_file($actual_file_path);
 
     if ($self->_do_runs_report()) {
         $self->make_runs_details(
@@ -675,7 +696,8 @@ sub analyse_digest { # {{{
             run_hits       => $hits->{'run'},
             per_run_info   => $per_run_info,
             source_lines   => \@source_lines,
-            item_summary   => $item_summary
+            item_summary   => $item_summary,
+            vcs_metadata   => $vcs_metadata,
         );
     }
 
@@ -686,7 +708,8 @@ sub analyse_digest { # {{{
             hits           => $hits->{'global'},
             report_id      => $digest,
             source_lines   => \@source_lines,
-            item_summary   => $item_summary
+            item_summary   => $item_summary,
+            vcs_metadata   => $vcs_metadata,
         );
     }
 
@@ -724,6 +747,12 @@ sub analyse_digest { # {{{
         }
     }
 
+    if ($self->_do_vcs()) {
+        my %per_line_criterions = $self->_make_per_line_criterions($structure_data, $hits->{'global'});
+
+        $self->_append_vcs_summary(\@source_lines, $vcs_metadata, \%per_line_criterions);
+    }
+
     $self->{'summary'}->{'folders'}->{$class_folder}->{'_files'}++;
 
     # Propagate folder-related stats down the tree.
@@ -746,6 +775,50 @@ sub analyse_digest { # {{{
     }
 
     $self->{'summary'}->{'files'}->{$digest} = \%item_summary_row;
+
+    return;
+} # }}}
+
+# Purpose:
+#   Append information from single digest to globas VCS summary pool.
+sub _append_vcs_summary { # {{{
+    my ( $self, $source_lines, $vcs_metadata, $per_line_hits ) = @_;
+
+    # $per_line_criterions -> $per_line_hits
+
+    my $ln    = 0; # Computer-readable line number.
+    my $hr_ln = 1; # Humar-Readable Line Number
+    foreach my $line (@{ $source_lines }) {
+        my $commit_id = $vcs_metadata->{'lines'}->[$ln]->{'_id'};
+
+        if (not $commit_id) {
+            next;
+        }
+
+        foreach my $criterion (qw( statement subroutine pod )) {
+            if (defined $per_line_hits->{$criterion}->[$hr_ln]) {
+                foreach my $count (@{ $per_line_hits->{$criterion}->[$hr_ln] }) {
+                    if ($count) {
+                        $self->{'vcs_summary'}->{$commit_id}->{$criterion}->{'count_covered'}++;
+                    }
+                    $self->{'vcs_summary'}->{$commit_id}->{$criterion}->{'count_coverable'}++;
+                }
+            }
+        }
+        foreach my $criterion (qw( branch condition )) {
+            if (defined $per_line_hits->{$criterion}->[$hr_ln]) {
+                foreach my $count (@{ $per_line_hits->{$criterion}->[$hr_ln] }) {
+                    if ($count == 100) {
+                        $self->{'vcs_summary'}->{$commit_id}->{$criterion}->{'count_covered'}++;
+                    }
+                    $self->{'vcs_summary'}->{$commit_id}->{$criterion}->{'count_coverable'}++;
+                }
+            }
+        }
+
+        $ln++;
+        $hr_ln++;
+    }
 
     return;
 } # }}}
@@ -865,6 +938,7 @@ sub make_generic_summary { # {{{
         {
             report       => { type=>SCALAR },
             item_summary => { type=>HASHREF },
+            vcs_summary  => { type=>HASHREF | UNDEF },
         }
     );
 
@@ -954,6 +1028,7 @@ sub make_runs_details { # {{{
             per_run_info   => { type=>HASHREF },
             source_lines   => { type=>ARRAYREF },
             item_summary   => { type=>HASHREF },
+            vcs_metadata   => { type=>HASHREF | UNDEF },
         }
     );
 
@@ -1037,6 +1112,7 @@ sub make_runs_details { # {{{
                     report_id      => $P{'digest'} . q{-} . $run,
                     source_lines   => $P{'source_lines'},
                     item_summary   => $run_summary,
+                    vcs_metadata   => $P{'vcs_metadata'},
                 );
             }
 
@@ -1084,11 +1160,18 @@ sub make_coverage_summary { # {{{
             report_id      => { type=>SCALAR },
             source_lines   => { type=>ARRAYREF },
             item_summary   => { type=>HASHREF },
+            vcs_metadata   => { type=>HASHREF | UNDEF },
         }
     );
 
     # Per-line criterions.
     my %per_line_criterions = $self->_make_per_line_criterions($P{'structure_data'}, $P{'hits'});
+
+    my @headers_order = ( 'line', @{ $self->{'criterion-order'} } );
+    if ($P{'vcs_metadata'}) {
+        push @headers_order, @{ $self->{'vcs-order'} };
+    }
+    push @headers_order, 'source';
 
     my $coverage_table = $self->{'formatter'}->add_table(
         $P{'report_id'},
@@ -1105,12 +1188,16 @@ sub make_coverage_summary { # {{{
                 'pod'        => { caption=>'POD',   f=>q{%d},    fs=>q{%.1f%%} },
                 'time'       => { caption=>'Time',  f=>q{%.3fs}, fs=>q{%.3fs} },
 
+                'vcs_rev'    => { caption=>'VCS Id', f=>q{%s}, fs=>q{%s}, class=>'vcs' },
+                'vcs_author' => { caption=>'Author', f=>q{%s}, fs=>q{%s}, class=>'vcs' },
+
                 'source' => { caption=>'Source code', f=>q{%s}, fs=>q{%s}, class=>'src' },
             },
-            headers_order => [qw( line statement branch condition subroutine pod time source )],
+            headers_order => \@headers_order,
         }
     );
 
+    my $ln    = 0; # Computer-readable line number.
     my $hr_ln = 1; # Humar-Readable Line Number
     foreach my $line (@{ $P{'source_lines'} }) {
 #        push @report_lines, q{<tr valign=top style="border: 1px solid #cccccc;">};
@@ -1170,8 +1257,15 @@ sub make_coverage_summary { # {{{
             }
         }
 
+        # Append VCS information, if available.
+        if ($P{'vcs_metadata'}) {
+            $row{'vcs_rev'}    = $P{'vcs_metadata'}->{'lines'}->[$ln]->{'cid'};
+            $row{'vcs_author'} = $P{'vcs_metadata'}->{'lines'}->[$ln]->{'author'};
+        }
+
         $coverage_table->add_row(\%row);
 
+        $ln++;
         $hr_ln++;
     }
     
@@ -1551,6 +1645,7 @@ sub make_summary_report { # {{{
     $self->make_generic_summary(
         report       => 'Summary',
         item_summary => $self->{'summary'}->{'total'},
+        vcs_summary  => $self->{'vcs_summary'},
     );
 
     my $covered_table = $self->{'formatter'}->add_table(
@@ -1637,9 +1732,209 @@ sub make_summary_report { # {{{
 
     # Add total summary as well:
     $covered_table->add_summary($total_summary);
+    
+    if ($self->_do_vcs()) {
+        my $vcs_summary = $self->{'formatter'}->add_table(
+            'Summary',
+            'VCS',
+            {
+                label   => 'Version Control System summary:',
+                headers => {
+                    'vcs' => { caption=>'Version Control System', f=>q{%s}, fs=>q{%s}, class=>'head' },
+                
+                    'statement'  => { caption=>'St.',   f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'branch'     => { caption=>'Br.',   f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'condition'  => { caption=>'Cond.', f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'subroutine' => { caption=>'Sub.',  f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'pod'        => { caption=>'POD',   f=>q{%d%%}, fs=>q{%.1f%%} },
+
+                    'coverable'  => { caption=>'Coverable', f=>q{%d},     fs=>q{} },
+                    'covered'    => { caption=>'Covered',   f=>q{%d},     fs=>q{} },
+                    'coverage'   => { caption=>'Coverage',  f=>q{%.1f%%}, fs=>q{%.1f%%} },
+                }
+            },
+            headers_order => [ 'vcs', @{ $self->{'criterion-order'} }, qw( coverable covered coverage ) ],
+        }
+    );
+
+    my %labels = (
+        'statement'  => 'Statement',
+        'branch'     => 'Branch',
+        'condition'  => 'Condition',
+        'subroutine' => 'Subroutine',
+        'pod'        => 'POD',
+    );
+
+    my ($coverage_sum, $coverage_count) = (0, 0);
+    foreach my $criterion (@{ $self->{'criterion-order'} }) {
+        # Skip criterions, that are not labeled, like: Time.
+        if (not $labels{$criterion}) {
+            next;
+        }
+
+        $coverage_sum  += ( $P{'item_summary'}->{$criterion}->{'coverage'} or 0);
+        $coverage_count++;
+
+        my %row = (
+            criterion => $labels{$criterion},
+
+            coverable => $P{'item_summary'}->{$criterion}->{'count_coverable'},
+            covered   => $P{'item_summary'}->{$criterion}->{'count_covered'},
+            coverage  => {
+                class => c_class($P{'item_summary'}->{$criterion}->{'coverage'}),
+                v     => $P{'item_summary'}->{$criterion}->{'coverage'},
+            }
+        );
+
+        $summary_table->add_row(\%row);
+    }
+
+    my $overall_coverage = $coverage_sum / $coverage_count;
+    my %row = (
+        criterion => 'Overall coverage',
+
+        coverage  => {
+            class => c_class($overall_coverage),
+            v     => $overall_coverage,
+        }
+    );
+
+    $summary_table->add_summary(\%row);
+
+
+
+
+        my $vcs_table = $self->{'formatter'}->add_table(
+            'Summary',
+            'VCS',
+            {
+                label => 'Version Control System summary:',
+
+                headers => {
+                    'date'   => { caption => 'Date',   f=>q{%s}, class => 'vcs' },
+                    'vcs'    => { caption => 'VCS',    f=>q{%s}, class => 'vcs' },
+                    'cid'    => { caption => 'VCS Id', f=>q{%s}, class => 'vcs' },
+                    'author' => { caption => 'Author', f=>q{%s}, class => 'vcs' },
+
+                    'statement'  => { caption=>'St.',   f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'branch'     => { caption=>'Br.',   f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'condition'  => { caption=>'Cond.', f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'subroutine' => { caption=>'Sub.',  f=>q{%d%%}, fs=>q{%.1f%%} },
+                    'pod'        => { caption=>'POD',   f=>q{%d%%}, fs=>q{%.1f%%} },
+
+                    'time' => { caption=>'Time',  f=>q{%.3fs}, fs=>q{%.3fs} },
+                },
+                headers_order => [ 'date', 'vcs', 'cid', 'author', @{ $self->{'criterion-order'} } ],
+            }
+        );
+
+        foreach my $_id (sort {$self->{'vcs_cache'}->{$a}->{'date'} <=> $self->{'vcs_cache'}->{$b}->{'date'}} keys %{ $self->{'vcs_summary'} }) {
+            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime $self->{'vcs_cache'}->{$_id}->{'date'};
+
+            my $date_time = sprintf q{%04d-%02d-%02d %02d:%02d:%02d}, $year+1900, $mon++, $mday, $hour, $min, $sec;
+
+            my %row = (
+                date   => $date_time,
+                vcs    => $self->{'vcs_cache'}->{$_id}->{'vcs'},
+                cid    => $self->{'vcs_cache'}->{$_id}->{'cid'},
+#                cid => $_id,
+                author => $self->{'vcs_cache'}->{$_id}->{'author'},
+            );
+
+            foreach my $criterion (qw( statement subroutine pod branch condition time )) {
+                if ($self->{'criterion-enabled'}->{$criterion}) {
+                    my $coverage = 0;
+
+                    if ($self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'}) {
+                        $coverage = 100 * $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_covered'} / $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'};
+                    }
+
+                    $row{$criterion} = {
+                        class => c_class($coverage),
+                        v     => $coverage,
+                    };
+                }
+            }
+
+            $vcs_table->add_row(\%row);
+        }
+    }
 
     return $self->{'formatter'}->close_report('Summary');
 } # }}}
+
+################################################################################
+#                         Version Control Support                              #
+################################################################################
+
+# Purpose:
+#   Get metadata from Version Control System, about the file.
+#
+#   Returns undef, if the file is not controled by VCS or if metadata can not be extracted.
+# 
+# Returns:
+#   Hashref = {
+#       current => {                    # File's metadata
+#           vcs    => 'git',                    # What VCS controls the file
+#           author => 'ntnl',                   # Username, that made the change
+#           cid    => '2fdddeeaa7ef5e9ddc90',   # Commit ID or Revision
+#           date   => 1278492553                # Unix timestamp, when the change was made.
+#       },
+#       lines => [                      # Per-line information (index in table = line number, counter from 0)
+#           {                               # Information about first line in the file.
+#               author => 'ntnl',
+#               cid    => '2fdddeeaa7ef5e9ddc90'
+#           },
+#           ...
+#       ],
+#   }
+#   Note: to conserve memory, references in @lines can re-use their targets, so please - clone them before doing changes!
+sub _get_vcs_metadata { # {{{
+    my ( $self, $filename ) = @_;
+
+    warn "VCS data for $filename is FAKE!\n";
+
+    # TODO:
+
+    # Detect what VCS handles the file...
+
+    # Try to load proper plugin...
+
+    # Query the plugin for data...
+
+    # For now, fake data will be returned:
+    my @faketors = qw( Wictor Zuzanna Agaton );
+
+    my $cid = md5_hex(int rand 15);
+    my $metadata = {
+        current => {
+            vcs    => 'git',
+            author => $faketors[ int ( rand 3 ) ],
+            cid    => $cid,
+            date   => 1278492553 + int rand 3600
+        },
+        lines => [],
+    };
+    foreach my $l (0..150) {
+        my $line_cid = md5_hex(int rand 15);
+
+        $metadata->{'lines'}->[$l] = {
+            _id    => 'git:' . $line_cid,
+            vcs    => 'git',
+            author => $faketors[ int ( rand 3 ) ],
+            cid    => $line_cid,
+            date   => 1278492553 + int rand 3600
+        };
+
+        $self->{'vcs_cache'}->{ $metadata->{'current'}->{'vcs'} . q{:} . $metadata->{'current'}->{'cid'} } = $metadata->{'lines'}->[$l];
+    }
+
+    return $metadata;
+} # }}}
+
+################################################################################
+#                                     ...                                      #
+################################################################################
 
 # Purpose:
 #   Compare two paths. Rukes:
@@ -1675,7 +1970,7 @@ Params: C<$source>
 
 sub compute_summary { # {{{
     my ( $self, $source ) = @_;
-    
+
     assert_hashref($source, "Source must be a hashref.");
 
     # Start by checking how many non-zeros we have...

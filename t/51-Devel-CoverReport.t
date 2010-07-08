@@ -12,8 +12,8 @@ use lib $Bin .'/../lib/';
 use lib $Bin .'/../blib/';
 # DEBUG off
 
-use Devel::CoverReport 0.03;
-use Devel::CoverReport::Feedback 0.03;
+use Devel::CoverReport 0.04;
+use Devel::CoverReport::Feedback 0.04;
 
 use English qw( -no_match_vars );
 use File::Path 1.07 qw( rmtree );
