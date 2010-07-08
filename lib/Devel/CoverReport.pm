@@ -794,7 +794,7 @@ sub _append_vcs_summary { # {{{
         if (not $commit_id) {
             next;
         }
-
+        
         foreach my $criterion (qw( statement subroutine pod )) {
             if (defined $per_line_hits->{$criterion}->[$hr_ln]) {
                 foreach my $count (@{ $per_line_hits->{$criterion}->[$hr_ln] }) {
@@ -938,7 +938,6 @@ sub make_generic_summary { # {{{
         {
             report       => { type=>SCALAR },
             item_summary => { type=>HASHREF },
-            vcs_summary  => { type=>HASHREF | UNDEF },
         }
     );
 
@@ -1258,7 +1257,7 @@ sub make_coverage_summary { # {{{
         }
 
         # Append VCS information, if available.
-        if ($P{'vcs_metadata'}) {
+        if ($P{'vcs_metadata'} and $P{'vcs_metadata'}->{'lines'}->[$ln]) {
             $row{'vcs_rev'}    = $P{'vcs_metadata'}->{'lines'}->[$ln]->{'cid'};
             $row{'vcs_author'} = $P{'vcs_metadata'}->{'lines'}->[$ln]->{'author'};
         }
@@ -1268,7 +1267,7 @@ sub make_coverage_summary { # {{{
         $ln++;
         $hr_ln++;
     }
-    
+
     $coverage_table->add_summary(
         {
             'line' => $hr_ln - 1,
@@ -1645,9 +1644,35 @@ sub make_summary_report { # {{{
     $self->make_generic_summary(
         report       => 'Summary',
         item_summary => $self->{'summary'}->{'total'},
-        vcs_summary  => $self->{'vcs_summary'},
     );
 
+    if ($self->_do_vcs()) {
+        my $vcs_summary = $self->{'formatter'}->add_table(
+            'Summary',
+            'VCS',
+            {
+                label   => 'Version Control System summary:',
+                headers => {
+                    'vcs'     => { caption=>'Version Control System', f=>q{%s}, fs=>q{%s} },
+                    'commits' => { caption=>'Commits',                f=>q{%d}, fs=>q{%d} },
+                },
+                headers_order => [qw( vcs commits )],
+            },
+        );
+
+        $vcs_summary->add_row(
+            {
+                vcs     => 'Commits:',
+                commits => {
+                    v    => scalar keys %{ $self->{'vcs_summary'} },
+                    href => 'vcs_report'
+                },
+            }
+        );
+
+        $self->make_vcs_commits_report();
+    }
+    
     my $covered_table = $self->{'formatter'}->add_table(
         'Summary',
         'Files',
@@ -1733,133 +1758,6 @@ sub make_summary_report { # {{{
     # Add total summary as well:
     $covered_table->add_summary($total_summary);
     
-    if ($self->_do_vcs()) {
-        my $vcs_summary = $self->{'formatter'}->add_table(
-            'Summary',
-            'VCS',
-            {
-                label   => 'Version Control System summary:',
-                headers => {
-                    'vcs' => { caption=>'Version Control System', f=>q{%s}, fs=>q{%s}, class=>'head' },
-                
-                    'statement'  => { caption=>'St.',   f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'branch'     => { caption=>'Br.',   f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'condition'  => { caption=>'Cond.', f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'subroutine' => { caption=>'Sub.',  f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'pod'        => { caption=>'POD',   f=>q{%d%%}, fs=>q{%.1f%%} },
-
-                    'coverable'  => { caption=>'Coverable', f=>q{%d},     fs=>q{} },
-                    'covered'    => { caption=>'Covered',   f=>q{%d},     fs=>q{} },
-                    'coverage'   => { caption=>'Coverage',  f=>q{%.1f%%}, fs=>q{%.1f%%} },
-                }
-            },
-            headers_order => [ 'vcs', @{ $self->{'criterion-order'} }, qw( coverable covered coverage ) ],
-        }
-    );
-
-    my %labels = (
-        'statement'  => 'Statement',
-        'branch'     => 'Branch',
-        'condition'  => 'Condition',
-        'subroutine' => 'Subroutine',
-        'pod'        => 'POD',
-    );
-
-    my ($coverage_sum, $coverage_count) = (0, 0);
-    foreach my $criterion (@{ $self->{'criterion-order'} }) {
-        # Skip criterions, that are not labeled, like: Time.
-        if (not $labels{$criterion}) {
-            next;
-        }
-
-        $coverage_sum  += ( $P{'item_summary'}->{$criterion}->{'coverage'} or 0);
-        $coverage_count++;
-
-        my %row = (
-            criterion => $labels{$criterion},
-
-            coverable => $P{'item_summary'}->{$criterion}->{'count_coverable'},
-            covered   => $P{'item_summary'}->{$criterion}->{'count_covered'},
-            coverage  => {
-                class => c_class($P{'item_summary'}->{$criterion}->{'coverage'}),
-                v     => $P{'item_summary'}->{$criterion}->{'coverage'},
-            }
-        );
-
-        $summary_table->add_row(\%row);
-    }
-
-    my $overall_coverage = $coverage_sum / $coverage_count;
-    my %row = (
-        criterion => 'Overall coverage',
-
-        coverage  => {
-            class => c_class($overall_coverage),
-            v     => $overall_coverage,
-        }
-    );
-
-    $summary_table->add_summary(\%row);
-
-
-
-
-        my $vcs_table = $self->{'formatter'}->add_table(
-            'Summary',
-            'VCS',
-            {
-                label => 'Version Control System summary:',
-
-                headers => {
-                    'date'   => { caption => 'Date',   f=>q{%s}, class => 'vcs' },
-                    'vcs'    => { caption => 'VCS',    f=>q{%s}, class => 'vcs' },
-                    'cid'    => { caption => 'VCS Id', f=>q{%s}, class => 'vcs' },
-                    'author' => { caption => 'Author', f=>q{%s}, class => 'vcs' },
-
-                    'statement'  => { caption=>'St.',   f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'branch'     => { caption=>'Br.',   f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'condition'  => { caption=>'Cond.', f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'subroutine' => { caption=>'Sub.',  f=>q{%d%%}, fs=>q{%.1f%%} },
-                    'pod'        => { caption=>'POD',   f=>q{%d%%}, fs=>q{%.1f%%} },
-
-                    'time' => { caption=>'Time',  f=>q{%.3fs}, fs=>q{%.3fs} },
-                },
-                headers_order => [ 'date', 'vcs', 'cid', 'author', @{ $self->{'criterion-order'} } ],
-            }
-        );
-
-        foreach my $_id (sort {$self->{'vcs_cache'}->{$a}->{'date'} <=> $self->{'vcs_cache'}->{$b}->{'date'}} keys %{ $self->{'vcs_summary'} }) {
-            my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime $self->{'vcs_cache'}->{$_id}->{'date'};
-
-            my $date_time = sprintf q{%04d-%02d-%02d %02d:%02d:%02d}, $year+1900, $mon++, $mday, $hour, $min, $sec;
-
-            my %row = (
-                date   => $date_time,
-                vcs    => $self->{'vcs_cache'}->{$_id}->{'vcs'},
-                cid    => $self->{'vcs_cache'}->{$_id}->{'cid'},
-#                cid => $_id,
-                author => $self->{'vcs_cache'}->{$_id}->{'author'},
-            );
-
-            foreach my $criterion (qw( statement subroutine pod branch condition time )) {
-                if ($self->{'criterion-enabled'}->{$criterion}) {
-                    my $coverage = 0;
-
-                    if ($self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'}) {
-                        $coverage = 100 * $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_covered'} / $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'};
-                    }
-
-                    $row{$criterion} = {
-                        class => c_class($coverage),
-                        v     => $coverage,
-                    };
-                }
-            }
-
-            $vcs_table->add_row(\%row);
-        }
-    }
-
     return $self->{'formatter'}->close_report('Summary');
 } # }}}
 
@@ -1903,33 +1801,91 @@ sub _get_vcs_metadata { # {{{
     # Query the plugin for data...
 
     # For now, fake data will be returned:
-    my @faketors = qw( Wictor Zuzanna Agaton );
+    require Devel::CoverReport::VCS::Fake;
 
-    my $cid = md5_hex(int rand 15);
-    my $metadata = {
-        current => {
-            vcs    => 'git',
-            author => $faketors[ int ( rand 3 ) ],
-            cid    => $cid,
-            date   => 1278492553 + int rand 3600
-        },
-        lines => [],
-    };
-    foreach my $l (0..150) {
-        my $line_cid = md5_hex(int rand 15);
+    my $metadata = Devel::CoverReport::VCS::Fake::inspect($filename);
 
-        $metadata->{'lines'}->[$l] = {
-            _id    => 'git:' . $line_cid,
-            vcs    => 'git',
-            author => $faketors[ int ( rand 3 ) ],
-            cid    => $line_cid,
-            date   => 1278492553 + int rand 3600
-        };
+    if (not $metadata) {
+        return;
+    }
 
-        $self->{'vcs_cache'}->{ $metadata->{'current'}->{'vcs'} . q{:} . $metadata->{'current'}->{'cid'} } = $metadata->{'lines'}->[$l];
+#    use Data::Dumper; die Dumper $metadata;
+
+    foreach my $line (@{ $metadata->{'lines'} }) {
+        $self->{'vcs_cache'}->{ $line->{'_id'} } = $line;
     }
 
     return $metadata;
+} # }}}
+
+
+sub make_vcs_commits_report { # {{{
+    my ( $self ) = @_;
+
+    my $vcs_report = $self->{'formatter'}->add_report(
+        code     => 'VCS',
+        basename => 'vcs_report',
+        title    => 'Version Control System summary'
+    );
+
+    my $vcs_table = $self->{'formatter'}->add_table(
+        'VCS',
+        'Commits',
+        {
+            label => 'Version Control System summary:',
+
+            headers => {
+                'date'   => { caption => 'Date',   f=>q{%s}, class => 'vcs' },
+                'vcs'    => { caption => 'VCS',    f=>q{%s}, class => 'vcs' },
+                'cid'    => { caption => 'VCS Id', f=>q{%s}, class => 'vcs' },
+                'author' => { caption => 'Author', f=>q{%s}, class => 'vcs' },
+
+                'statement'  => { caption=>'St.',   f=>q{%d%%}, fs=>q{%.1f%%} },
+                'branch'     => { caption=>'Br.',   f=>q{%d%%}, fs=>q{%.1f%%} },
+                'condition'  => { caption=>'Cond.', f=>q{%d%%}, fs=>q{%.1f%%} },
+                'subroutine' => { caption=>'Sub.',  f=>q{%d%%}, fs=>q{%.1f%%} },
+                'pod'        => { caption=>'POD',   f=>q{%d%%}, fs=>q{%.1f%%} },
+
+                'time' => { caption=>'Time',  f=>q{%.3fs}, fs=>q{%.3fs} },
+            },
+            headers_order => [ 'date', 'vcs', 'cid', 'author', @{ $self->{'criterion-order'} } ],
+        }
+    );
+
+    foreach my $_id (sort {$self->{'vcs_cache'}->{$b}->{'date'} <=> $self->{'vcs_cache'}->{$a}->{'date'}} keys %{ $self->{'vcs_summary'} }) {
+        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime $self->{'vcs_cache'}->{$_id}->{'date'};
+
+        my $date_time = sprintf q{%04d-%02d-%02d %02d:%02d:%02d}, $year+1900, $mon++, $mday, $hour, $min, $sec;
+
+        my %row = (
+            date   => $date_time,
+            vcs    => $self->{'vcs_cache'}->{$_id}->{'vcs'},
+            cid    => $self->{'vcs_cache'}->{$_id}->{'cid'},
+#            cid => $_id,
+            author => $self->{'vcs_cache'}->{$_id}->{'author'},
+        );
+
+        foreach my $criterion (qw( statement subroutine pod branch condition time )) {
+            if ($self->{'criterion-enabled'}->{$criterion}) {
+                my $coverage = 0;
+
+                if ($self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'}) {
+                    $coverage = 100 * ( $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_covered'} or 0) / $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'};
+                }
+
+                $row{$criterion} = {
+                    class => c_class($coverage),
+                    v     => $coverage,
+                };
+            }
+        }
+
+        $vcs_table->add_row(\%row);
+    }
+    
+    $self->{'formatter'}->close_report('VCS');
+
+    return;
 } # }}}
 
 ################################################################################
