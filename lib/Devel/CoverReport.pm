@@ -1762,7 +1762,7 @@ sub make_summary_report { # {{{
 } # }}}
 
 ################################################################################
-#                         Version Control Support                              #
+#                     Version Control System support                           #
 ################################################################################
 
 # Purpose:
@@ -1772,7 +1772,7 @@ sub make_summary_report { # {{{
 # 
 # Returns:
 #   Hashref = {
-#       current => {                    # File's metadata
+#       current => {                    # File's metadata (currently unused!)
 #           vcs    => 'git',                    # What VCS controls the file
 #           author => 'ntnl',                   # Username, that made the change
 #           cid    => '2fdddeeaa7ef5e9ddc90',   # Commit ID or Revision
@@ -1790,20 +1790,46 @@ sub make_summary_report { # {{{
 sub _get_vcs_metadata { # {{{
     my ( $self, $filename ) = @_;
 
-    warn "VCS data for $filename is FAKE!\n";
-
-    # TODO:
-
     # Detect what VCS handles the file...
+    my ( $basedir ) = ( $filename =~ m{^(.*?)/[^/]+$}s );
+    my $vcs;
+
+    # Probe for Subversion
+    if (-d $basedir .q{.svn}) {
+        $vcs = 'SVN';
+    }
+
+    # Probe for Git
+    my @dir_parts = split m{/}, $basedir;
+    while (1) {
+        my $tmp_path = join q{/}, @dir_parts, q{.git};
+
+        if (-d $tmp_path) {
+            $vcs = 'Git';
+            last;
+        }
+
+        if (not scalar @dir_parts) {
+            last;
+        }
+
+        shift @dir_parts;
+    }
+
+    # Not under VCS? OK - I can live with it :)
+    if (not $vcs) {
+        return;
+    }
 
     # Try to load proper plugin...
+    my $r_path = q{Devel/CoverReport/VCS/} . $vcs .q{.pm};
 
+    require $r_path;
+    
     # Query the plugin for data...
+    my $sub_name = q{Devel::CoverReport::VCS::} . $vcs .q{::inspect};
 
-    # For now, fake data will be returned:
-    require Devel::CoverReport::VCS::Fake;
-
-    my $metadata = Devel::CoverReport::VCS::Fake::inspect($filename);
+    my $metadata = &{ \&{ $sub_name } }($filename);
 
     if (not $metadata) {
         return;

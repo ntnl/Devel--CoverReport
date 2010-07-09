@@ -4,7 +4,7 @@
 #
 # For more, see my website: http://natanael.krakow.pl/
 
-package Devel::CoverReport::VCS::Fake;
+package Devel::CoverReport::VCS::Git;
 
 use strict; use warnings;
 
@@ -12,18 +12,19 @@ our $VERSION = 0.04;
 
 use Carp::Assert::More qw( assert_defined );
 use File::Slurp qw( read_file );
+use Time::Local qw( timelocal );
 
 =encoding UTF-8
 
 =head1 NAME
 
-Devel::CoverReport::VCS::Fake - Fake VCS plugin for testing purposes.
+Devel::CoverReport::VCS::Git - Git VCS plugin for Devel::CoverReport.
 
 =head1 SYNOPSIS
 
- require Devel::CoverReport::VCS::Fake;
+ require Devel::CoverReport::VCS::Git;
 
- my $vcs_metadata = Devel::CoverReport::VCS::Fake::inspect($file_path);
+ my $vcs_metadata = Devel::CoverReport::VCS::Git::inspect($file_path);
 
 =over
 
@@ -34,35 +35,6 @@ Returns: VCS metadata, as required by Devel::CoverReport.
 Parameter: path to file, that should be inspected.
 
 =cut
-
-my $c_count;    # How many fake commits will be... faked (defined in BEGIN).
-my $n = 0;
-my @commits;
-
-BEGIN {
-    my @authors = qw(
-        Alicia
-        Mark
-        Nataly
-        Quinn
-        Wictor
-        Zuzanna
-    );
-
-    $c_count = 15;
-
-    foreach my $seed (1..$c_count) {
-        my $cid = 1 + int ( $seed * 1.234 );
-
-        push @commits, {
-            _id    => 'fake:' . $cid,
-            vcs    => 'fake',
-            author => $authors[ int ( $seed / 3 ) ],
-            cid    => $cid,
-            date   => 1278492553 + 3600 * $seed
-        };
-    }
-}
 
 sub inspect { # {{{
     my ( $file_path ) = @_;
@@ -75,13 +47,32 @@ sub inspect { # {{{
         return;
     }
 
+    my $ph;
+    if (not open $ph, q{-|}, "git blame $file_path") {
+        return;
+    }
+
     my %metadata = (
         lines   => [],
     );
-    
-    my @lines = read_file($file_path);
+
+    my @lines = read_file($ph);
+
+#    use Data::Dumper; die Dumper \@lines;
+
     foreach my $line (@lines) {
-        push @{ $metadata{'lines'} }, $commits[ ( $n++ / 3 ) % $c_count ];
+        if ($line =~ m{^([^ ]+) \((.+?) (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)}s) {
+            # Fixme: timezone is ignored.
+            my ( $commit_id, $author, $year, $mon, $mday, $hour, $min, $sec ) = ( $1, $2, $3,$4,$5, $6,$7,$8 );
+
+            push @{ $metadata{'lines'} }, {
+                _id    => 'git:'. $commit_id,
+                vcs    => 'git',
+                author => $author,
+                cid    => $commit_id,
+                date   => timelocal($sec,$min,$hour,$mday,$mon,$year),
+            };
+        }
     }
 
     return \%metadata;
@@ -104,3 +95,4 @@ For more, see my website: http://natanael.krakow.pl/
 =cut
 
 # vim: fdm=marker
+
