@@ -71,6 +71,7 @@ sub inspect { # {{{
 
 #    use Data::Dumper; warn Dumper \@commits;
 
+    # Yes, it is NOT obvious ;)
     if (not -f $file_path) {
         return;
     }

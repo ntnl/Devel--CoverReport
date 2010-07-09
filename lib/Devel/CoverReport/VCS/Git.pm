@@ -43,6 +43,7 @@ sub inspect { # {{{
 
 #    use Data::Dumper; warn Dumper \@commits;
 
+    # Yes, it is NOT obvious ;)
     if (not -f $file_path) {
         return;
     }
@@ -70,7 +71,7 @@ sub inspect { # {{{
                 vcs    => 'git',
                 author => $author,
                 cid    => $commit_id,
-                date   => timelocal($sec,$min,$hour,$mday,$mon,$year),
+                date   => eval { return timelocal($sec, $min, $hour, $mday, $mon - 1, $year - 1900); },
             };
         }
     }

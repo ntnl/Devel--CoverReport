@@ -1646,7 +1646,10 @@ sub make_summary_report { # {{{
         item_summary => $self->{'summary'}->{'total'},
     );
 
-    if ($self->_do_vcs()) {
+    # Add summary table only is:
+    #   a) VCS reporting was enabled
+    #   b) there actually WAS a VCS used...
+    if ($self->_do_vcs() and scalar keys %{ $self->{'vcs_summary'} }) {
         my $vcs_summary = $self->{'formatter'}->add_table(
             'Summary',
             'VCS',
@@ -1795,7 +1798,7 @@ sub _get_vcs_metadata { # {{{
     my $vcs;
 
     # Probe for Subversion
-    if (-d $basedir .q{.svn}) {
+    if (-d $basedir .q{/.svn}) {
         $vcs = 'SVN';
     }
 
