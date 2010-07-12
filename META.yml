@@ -39,6 +39,15 @@ provides:
   Devel::CoverReport::Table:
     file: lib/Devel/CoverReport/Table.pm
     version: 0.04
+  Devel::CoverReport::VCS::Fake:
+    file: lib/Devel/CoverReport/VCS/Fake.pm
+    version: 0.04
+  Devel::CoverReport::VCS::Git:
+    file: lib/Devel/CoverReport/VCS/Git.pm
+    version: 0.04
+  Devel::CoverReport::VCS::SVN:
+    file: lib/Devel/CoverReport/VCS/SVN.pm
+    version: 0.04
 requires:
   App::Prove: 3.11
   Carp::Assert::More: 1.12
