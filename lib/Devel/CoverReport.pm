@@ -392,6 +392,9 @@ sub _job_fork { # {{{
 
             file_summary  => undef,
             total_summary => undef,
+        
+            vcs_summary => undef,
+            vcs_cache   => undef,
         };
 
         $self->{'feedback'}->at_file($structure_data->{'file'});
@@ -425,6 +428,9 @@ sub _job_fork { # {{{
         $self->{'child_report'}->{'total_summary'}  = $self->{'summary'}->{'total'};
 
         $self->{'child_report'}->{'folders'} = $self->{'summary'}->{'folders'};
+
+        $self->{'child_report'}->{'vcs_summary'} = $self->{'vcs_summary'};
+        $self->{'child_report'}->{'vcs_cache'}   = $self->{'vcs_cache'};
 
         return $self->_job_done();
     }
@@ -463,7 +469,7 @@ sub _job_wait { # {{{
     my $report_file_name = $self->{'jobs'}->{'spool_dir'} . $pid . q{-cover_report-CR.yml};
 
     my $child_report = LoadFile($report_file_name);
-    
+
     # Print child's buffered output.
     $self->{'feedback'}->pass_buffer( $child_report->{'feedback'} );
 
@@ -479,7 +485,7 @@ sub _job_wait { # {{{
                     $self->{'summary'}->{'folders'}->{$folder}->{$criterion}->{'count_covered'}   += $child_report->{'folders'}->{$folder}->{$criterion}->{'count_covered'};
                 }
             }
-            
+
 #            warn $folder;
             if ($child_report->{'folders'}->{$folder}->{'_files'}) {
                 $self->{'summary'}->{'folders'}->{$folder}->{'_files'} += $child_report->{'folders'}->{$folder}->{'_files'};
@@ -494,6 +500,19 @@ sub _job_wait { # {{{
                 $self->{'summary'}->{'total'}->{$criterion}->{'count_coverable'} += $child_report->{'total_summary'}->{$criterion}->{'count_coverable'};
                 $self->{'summary'}->{'total'}->{$criterion}->{'count_covered'}   += $child_report->{'total_summary'}->{$criterion}->{'count_covered'};
             }
+        }
+    }
+
+#    use Data::Dumper; warn Dumper $child_report->{'vcs_cache'}, $child_report->{'vcs_summary'};
+
+    # Integrate child's VCS information, with our own.
+    foreach my $_id (keys %{ $child_report->{'vcs_cache'} }) {
+        $self->{'vcs_cache'}->{$_id} = $child_report->{'vcs_cache'}->{$_id};
+    }
+    foreach my $_id (keys %{ $child_report->{'vcs_summary'} }) {
+        foreach my $criterion (qw( statement subroutine pod branch condition time )) {
+            $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'} = $child_report->{'vcs_summary'}->{$_id}->{$criterion}->{'count_coverable'};
+            $self->{'vcs_summary'}->{$_id}->{$criterion}->{'count_covered'}   = $child_report->{'vcs_summary'}->{$_id}->{$criterion}->{'count_covered'};
         }
     }
 
