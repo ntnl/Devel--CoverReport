@@ -1903,7 +1903,7 @@ sub make_vcs_commits_report { # {{{
     foreach my $_id (sort {$self->{'vcs_cache'}->{$b}->{'date'} <=> $self->{'vcs_cache'}->{$a}->{'date'}} keys %{ $self->{'vcs_summary'} }) {
         my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime $self->{'vcs_cache'}->{$_id}->{'date'};
 
-        my $date_time = sprintf q{%04d-%02d-%02d %02d:%02d:%02d}, $year+1900, $mon++, $mday, $hour, $min, $sec;
+        my $date_time = sprintf q{%04d-%02d-%02d %02d:%02d:%02d}, $year+1900, $mon+1, $mday, $hour, $min, $sec;
 
         my %row = (
             date   => $date_time,
