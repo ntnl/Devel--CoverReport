@@ -1,8 +1,8 @@
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 
 package Devel::CoverReport::DB;
 
@@ -13,7 +13,9 @@ our $VERSION = "0.04";
 
 use Carp;
 use Digest::MD5 qw( md5_hex );
+use English qw( -no_match_vars );
 use File::Slurp qw( read_file write_file read_dir );
+use JSON;
 use Params::Validate qw( :all );
 use Storable;
 use YAML::Syck qw( LoadFile DumpFile );
@@ -141,18 +143,22 @@ sub get_digest_to_run { # {{{
     $feedback->progress_open("Runs/files");
 
     foreach my $run ( read_dir($self->{'runs_path'}) ) {
-        my $datafile_path = $self->{'runs_path'} . q{/} . $run . q{/cover.12};
+        foreach my $version (qw( 12 13 )) {
+            my $datafile_path = $self->{'runs_path'} . q{/} . $run . q{/cover.} . $version;
 
-        if (not -f $datafile_path) {
-            next;
-        }
+            if (not -f $datafile_path) {
+                next;
+            }
 
-        my $run_data = retrieve($datafile_path);
+            my $run_data = $self->read_db_file($datafile_path, $version);
 
-#        use Data::Dumper; warn Dumper $run_data->{'runs'}->{$run}->{'digests'};
+#            use YAML::Syck; warn Dump $run_data;
 
-        foreach my $digest (values %{ $run_data->{'runs'}->{$run}->{'digests'} } ) {
-            push @{ $digest_to_run{$digest} }, $run;
+            foreach my $digest (values %{ $run_data->{'runs'}->{$run}->{'digests'} } ) {
+                push @{ $digest_to_run{$digest} }, $run;
+            }
+
+            last;
         }
 
         $feedback->progress_tick();
@@ -234,7 +240,7 @@ Returns:
 sub get_structure_data { # {{{
     my ( $self, $digest ) = @_;
 
-    return retrieve($self->{'structure_path'} . q{/} . $digest);
+    return $self->read_db_file($self->{'structure_path'} . q{/} . $digest);
 } # }}}
 
 =item get_run_data
@@ -252,7 +258,15 @@ Returns:
 sub get_run_data { # {{{
     my ( $self, $run ) = @_;
 
-    return retrieve($self->{'runs_path'} . q{/} . $run . q{/cover.12});
+    foreach my $version (qw( 12 13 )) {
+        my $run_data_path = $self->{'runs_path'} . q{/} . $run . q{/cover.} . $version;
+
+        if (-f $run_data_path) {
+            return $self->read_db_file($run_data_path);
+        }
+    }
+
+    return;
 } # }}}
 
 =item make_file_digest
@@ -273,17 +287,45 @@ sub make_file_digest { # {{{
     return ( $self->{'_digest_cache'}->{$path} or $self->{'_digest_cache'}->{$path} = md5_hex(scalar read_file($path)) );
 } # }}}
 
+=item read_db_file
+
+Read and parse DB file, then return data structure as it is in the file.
+
+Bu default, it assumes, that file is a I<storeble> data dump.
+When storable fails, it will try to use I<JSON> to load the data.
+
+This method supports reading I<.12> and I<.13> file formats.
+It can auto-detect if it was serialized with storable or JSON.
+
+=cut
+sub read_db_file { # {{{
+    my ( $self, $file_path ) = @_;
+
+    my $data = read_file($file_path);
+
+    my $storable_info = Storable::read_magic($data);
+
+    if ($storable_info) {
+        # Data is a Storable image.
+        return retrieve($file_path);
+    }
+
+    require JSON;
+
+    return decode_json( $data );
+} # }}}
+
 1;
 
 =back
 
 =head1 LICENCE
 
-Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 
-For more, see my website: http://natanael.krakow.pl/
+For more, see my website: http://bs502.pl/
 
 =cut
 

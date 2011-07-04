@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 
 require 5.6.1;
 
@@ -119,11 +119,11 @@ The plan is, to fix both those issues, and remove this warning in next immediate
 
 =head1 AUTHOR
 
-Bartłomiej Syguła <natanael@natanael.krakow.pl>
+Bartłomiej Syguła <perl@bs502.pl>
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-Copyright 2009-2010, Bartłomiej Syguła
+Copyright 2009-2011, Bartłomiej Syguła
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 

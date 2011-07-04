@@ -1,9 +1,9 @@
 #!/usr/bin/perl
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 use strict; use warnings;
 
 # DEBUG on
@@ -15,10 +15,12 @@ use lib $Bin .'/../blib/';
 use Devel::CoverReport 0.04;
 use Devel::CoverReport::Feedback 0.04;
 
+use Data::Compare;
 use English qw( -no_match_vars );
 use File::Path 1.07 qw( rmtree );
 use File::Slurp qw( read_dir read_file );
 use Test::More 0.94;
+use YAML::Syck qw( LoadFile );
 
 my @tests = (
     {
@@ -44,6 +46,7 @@ my @tests = (
             mention_dir => [],
             mention_re  => [],
         },
+        compare => \&_equals_yml,
     },
 
     {
@@ -69,6 +72,7 @@ my @tests = (
             mention_dir => [],
             mention_re  => [],
         },
+        compare => \&_equals_yml,
     },
 );
 
@@ -124,10 +128,10 @@ foreach my $test (@tests) {
             next;
         }
 
-        my $reference_data = read_file($reference_directory . q{/} . $reference_file);
-        my $output_data    = read_file($output_directory    . q{/} . $reference_file);
+        # Compare files, using different methods..
+        my $equals = $test->{'compare'}->($reference_directory . q{/} . $reference_file, $output_directory    . q{/} . $reference_file);
 
-        if (not $reference_data eq $output_data) {
+        if (not $equals) {
             diag("differ: ". $output_directory . q{/} . $reference_file . q{ vs }. $reference_directory . q{/} . $reference_file);
             $diff_failures++;
         }
@@ -142,6 +146,32 @@ foreach my $test (@tests) {
         rmtree($output_directory, {} );
     }
 }
+
+sub _equals_raw { # {{{
+    my ( $file_a, $file_b ) = @_;
+
+    my $reference_data = read_file($file_a);
+    my $output_data    = read_file($file_b);
+
+    if ($reference_data eq $output_data) {
+        return 1;
+    }
+
+    return;
+} # }}}
+
+sub _equals_yml { # {{{
+    my ( $file_a, $file_b ) = @_;
+
+    my $reference_data = LoadFile($file_a);
+    my $output_data    = LoadFile($file_b);
+
+    if (Compare($reference_data, $output_data)) {
+        return 1;
+    }
+
+    return;
+} # }}}
 
 package Devel::CoverReport::Feedback;
 

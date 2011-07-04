@@ -149,14 +149,19 @@ data:
           caption: Time
           f: "%.3fs"
           fs: "%.3fs"
+        vcs_author: 
+          caption: Author
+          class: vcs
+          f: "%s"
+          fs: "%s"
+        vcs_rev: 
+          caption: VCS Id
+          class: vcs
+          f: "%s"
+          fs: "%s"
       headers_order: 
         - line
         - statement
-        - branch
-        - condition
-        - subroutine
-        - pod
-        - time
         - source
       label: "Overall file coverage:"
       rows: 
@@ -729,4 +734,4 @@ data:
             v: ~
 metadata: 
   title: "Coverage: lib/Sample/Simple/Baz.pm"
-  version: 0.03
+  version: '0.04'

@@ -1,10 +1,10 @@
 #!/usr/bin/perl
 
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 
 require 5.6.1;
 
@@ -80,6 +80,7 @@ cover_report - Advanced coverage reports based on Devel::Cover (cover_db) databa
    coverage       coverage information, per each covered file.
    runs           coverage summary, per each file/run combination.
    run-details    coverage details, per each file/run combination.
+   cvs            include commit information from VCS
    all            default setting - include all.
 
 =head1 SELECTING FILES TO COVER
@@ -185,7 +186,7 @@ Due to this issue, Devel::CoverReport has to be used before running 'cover'.
 
 =head1 AUTHOR
 
-Bartłomiej Syguła <natanael@natanael.krakow.pl>
+Bartłomiej Syguła <perl@bs502.pl>
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -197,7 +198,7 @@ Johan Lindström (Devel::CoverX::Covered)
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-Copyright 2009-2010, Bartłomiej Syguła
+Copyright 2009-2011, Bartłomiej Syguła
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 

@@ -1,8 +1,8 @@
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 
 package Devel::CoverReport::Feedback;
 
@@ -127,6 +127,8 @@ sub at_file { # {{{
 
 sub _at_file { # {{{
     my ( $self, $file_path ) = @_;
+
+    assert_defined($file_path);
 
     # It's here, so we do not print the same thing twice:
     if ($self->{'at_file_last'} ne $file_path) {
@@ -326,11 +328,11 @@ sub _print { # {{{
 
 =head1 LICENCE
 
-Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 
-For more, see my website: http://natanael.krakow.pl/
+For more, see my website: http://bs502.pl/
 
 =cut
 

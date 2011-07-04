@@ -38,4 +38,4 @@ data:
 
 metadata: 
   title: "Branch coverage: t/Foo.t"
-  version: 0.03
+  version: 0.04

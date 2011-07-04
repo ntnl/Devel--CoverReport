@@ -1,8 +1,8 @@
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 
 package Devel::CoverReport::Formatter::Html;
 
@@ -266,11 +266,11 @@ sub _html_quote { # {{{
 
 =head1 LICENCE
 
-Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 
-For more, see my website: http://natanael.krakow.pl/
+For more, see my website: http://bs502.pl/
 
 =cut
 

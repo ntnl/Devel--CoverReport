@@ -1,8 +1,8 @@
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 
 package Devel::CoverReport;
 
@@ -39,7 +39,7 @@ This module provides advanced reports based on Devel::Cover database.
 
 =cut
 
-# Size of arrays, for array-based criterions.
+# Size of arrays, for array-based criteria.
 my %_ASIZE= (
     branch    => 2,
     condition => 3,
@@ -59,7 +59,7 @@ The plan is, to fix both those issues, and remove this warning in next immediate
 
 =item new
 
-Constructur for C<Devel::CoverReport>.
+Constructor for C<Devel::CoverReport>.
 
 =cut
 
@@ -252,6 +252,12 @@ sub make_report { # {{{
     $self->{'feedback'}->info("Scaning cover_db");
 
     my %digest_to_run = $self->{'db'}->get_digest_to_run($self->{'feedback'});
+
+    if (not scalar keys %digest_to_run) {
+        $self->{'feedback'}->error("No runs to process.");
+
+        return 0;
+    }
 
     $self->{'feedback'}->info("Generating reports.");
 
@@ -530,6 +536,11 @@ sub _make_in_sequence { # {{{
     foreach my $digest ( $self->{'db'}->digests() ) {
         my $structure_data = $self->{'db'}->get_structure_data($digest);
 
+        if (not $structure_data) {
+            $self->{'feedback'}->warning_at_file("Unable to load data from digest: $digest. File excluded.");
+            next;
+        }
+
         $self->{'feedback'}->at_file($structure_data->{'file'});
 
         my $file_classification = $self->classify_file($structure_data->{'file'});
@@ -640,7 +651,7 @@ sub _classify_as { # {{{
 
     foreach my $type (qw( by_glob by_dir by_re )) {
         foreach my $regexp (@{ $self->{$clasification}->{$type} }) {
-            if ($file_path =~ $regexp) {
+            if ($file_path and $file_path =~ $regexp) {
                 return 1;
             }
         }
@@ -664,6 +675,8 @@ Returns: nothing
 =cut
 sub analyse_digest { # {{{
     my ( $self, $runs, $digest, $structure_data ) = @_;
+
+    assert_defined($runs);
 
     # Process runs, that covered this file.
     $self->{'feedback'}->progress_open("Runs");
@@ -2170,11 +2183,11 @@ __END__
 
 =head1 LICENCE
 
-Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 
-For more, see my website: http://natanael.krakow.pl/
+For more, see my website: http://bs502.pl/
 
 =cut
 

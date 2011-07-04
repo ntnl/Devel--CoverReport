@@ -1,5 +1,15 @@
 Devel::CoverReport.pm history
 
+Release 0.04 - ...
+ - Added: display VCS information, and revision/commit coverage (BETA quality)
+ - Added: support for Subversion VCS (BETA quality)
+ - Added: support for GIT VCS (BETA quality)
+ - Change: Contact email changed to perl@bs502.pl
+ - Change: Website address changed to http://bs502.pl/
+ - Change: Require Devel::Cover v 0.74 or newer.
+ - Bugfix: Support for JSON db format introduced in Devel::Cover v 0.75
+ - Bugfix: Hide columns for disabled metrics
+
 Release 0.03 - 07 May 2010
  - Bugfix: Test::Perl::Critic is not required for installation.
  - Bugfix: Broken links to detailed reports corrected.

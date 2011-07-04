@@ -1,8 +1,8 @@
-# Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
-# For more, see my website: http://natanael.krakow.pl/
+# For more, see my website: http://bs502.pl/
 
 package Devel::CoverReport::App::ProveCover;
 
@@ -48,13 +48,13 @@ Main entry point. Executed by C<prove_cover>
 =cut
 sub main { # {{{
     my @cmd_params = @_;
-    
+
     # Strip 'our' parameters.
     my %cover_report_options = (
         'no_report' => q{},
         'cover_db'  => q{},
     );
-    
+
     Getopt::Long::Configure(qw( pass_through no_auto_help ));
     GetOptionsFromArray(
         \@cmd_params,
@@ -80,7 +80,7 @@ sub main { # {{{
 
     # Step 3: Run 'prove'
     $app->run;
-    
+
     # Step 4: run 'cover_report'
     if ($cover_report_options{'no_report'}) {
         print "Coverage report was not generated, use cover_report command to do that.\n";
@@ -130,11 +130,11 @@ __END__
 
 =head1 LICENCE
 
-Copyright 2009-2010, Bartłomiej Syguła (natanael@natanael.krakow.pl)
+Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 
-For more, see my website: http://natanael.krakow.pl/
+For more, see my website: http://bs502.pl/
 
 =cut
 

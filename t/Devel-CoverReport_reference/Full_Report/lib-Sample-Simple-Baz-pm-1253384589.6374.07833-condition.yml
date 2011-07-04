@@ -39,4 +39,4 @@ data:
 
 metadata: 
   title: "Condition coverage: lib/Sample/Simple/Baz.pm"
-  version: 0.03
+  version: 0.04

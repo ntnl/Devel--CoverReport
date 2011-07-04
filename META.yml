@@ -1,7 +1,7 @@
 ---
 abstract: 'Advanced coverage reports based on Devel::Cover'
 author:
-  - 'Bartłomiej Syguła <natanael@natanael.krakow.pl>'
+  - 'Bartłomiej Syguła <perl@bs502.pl>'
 configure_requires:
   Module::Build: 0.36
 dynamic_config: 0

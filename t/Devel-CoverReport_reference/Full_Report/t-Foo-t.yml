@@ -199,13 +199,23 @@ data:
           caption: Time
           f: "%.3fs"
           fs: "%.3fs"
+        vcs_author: 
+          caption: Author
+          class: vcs
+          f: "%s"
+          fs: "%s"
+        vcs_rev: 
+          caption: VCS Id
+          class: vcs
+          f: "%s"
+          fs: "%s"
       headers_order: 
         - line
         - statement
-        - branch
-        - condition
         - subroutine
         - pod
+        - branch
+        - condition
         - time
         - source
       label: "Overall file coverage:"
@@ -471,4 +481,4 @@ data:
             v: ~
 metadata: 
   title: "Coverage: t/Foo.t"
-  version: 0.03
+  version: 0.04
