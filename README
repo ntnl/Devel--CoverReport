@@ -20,7 +20,7 @@ WARNING
     immediate release.
 
 API
-    new Constructur for "Devel::CoverReport".
+    new Constructor for "Devel::CoverReport".
 
     make_report
         Make the report, as it was specified during object construction.
