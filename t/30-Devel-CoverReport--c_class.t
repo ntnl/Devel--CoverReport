@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
+# Copyright 2009-2012, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
@@ -13,7 +13,7 @@ use Test::More;
 
 plan tests => 101;
 
-use Devel::CoverReport 0.04;
+use Devel::CoverReport 0.05;
 
 # This is maybe 'brutal' way, but it's least error prone.
 is (Devel::CoverReport::c_class(0), 'c0', 'Percentage: 0');

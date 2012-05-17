@@ -9,7 +9,7 @@ package Devel::CoverReport::Formatter;
 use strict;
 use warnings;
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 
 use Devel::CoverReport::Table;
 

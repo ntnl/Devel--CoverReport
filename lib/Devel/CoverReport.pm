@@ -1,4 +1,4 @@
-# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
+# Copyright 2009-2012, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
@@ -8,10 +8,10 @@ package Devel::CoverReport;
 
 use strict; use warnings;
 
-our $VERSION = 0.04;
+our $VERSION = "0.05";
 
-use Devel::CoverReport::DB 0.04;
-use Devel::CoverReport::Feedback 0.04;
+use Devel::CoverReport::DB 0.05;
+use Devel::CoverReport::Feedback 0.05;
 
 use Carp::Assert::More qw( assert_defined assert_hashref assert_listref );
 use Digest::MD5 qw( md5_hex );
@@ -2183,7 +2183,7 @@ __END__
 
 =head1 LICENCE
 
-Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
+Copyright 2009-2012, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 

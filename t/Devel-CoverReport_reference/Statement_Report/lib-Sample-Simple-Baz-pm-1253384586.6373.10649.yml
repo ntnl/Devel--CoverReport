@@ -622,4 +622,4 @@ data:
             v: ~
 metadata: 
   title: "Coverage: lib/Sample/Simple/Baz.pm"
-  version: 0.04
+  version: 0.05

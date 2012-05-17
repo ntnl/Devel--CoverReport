@@ -4,6 +4,11 @@ _build/
 blib/
 Build
 Makefile.PL
+META.yml
+META.json
 MYMETA.yml
+MYMETA.json
 cover_db/
 t/tmp/*
+Devel-CoverReport-*.tar.gz
+

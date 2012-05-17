@@ -12,8 +12,8 @@ use lib $Bin .'/../lib/';
 use lib $Bin .'/../blib/';
 # DEBUG off
 
-use Devel::CoverReport 0.04;
-use Devel::CoverReport::Feedback 0.04;
+use Devel::CoverReport 0.05;
+use Devel::CoverReport::Feedback 0.05;
 
 use Data::Compare;
 use English qw( -no_match_vars );

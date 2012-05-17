@@ -1,4 +1,4 @@
-# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
+# Copyright 2009-2012, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
@@ -9,9 +9,9 @@ package Devel::CoverReport::App::ProveCover;
 use strict;
 use warnings;
 
-our $VERSION = 0.04;
+our $VERSION = "0.05";
 
-use Devel::CoverReport 0.04;
+use Devel::CoverReport 0.05;
 
 use App::Prove 3.11;
 use Carp;
@@ -130,7 +130,7 @@ __END__
 
 =head1 LICENCE
 
-Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
+Copyright 2009-2012, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 

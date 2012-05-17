@@ -1,11 +1,13 @@
 ---
 abstract: 'Advanced coverage reports based on Devel::Cover'
 author:
-  - 'Bartłomiej Syguła <perl@bs502.pl>'
+  - 'BartÅomiej SyguÅa <bs@bs502.pl>'
+build_requires:
+  Data::Compare: 1.22
 configure_requires:
-  Module::Build: 0.36
+  Module::Build: 0.38
 dynamic_config: 0
-generated_by: 'Module::Build version 0.3607'
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110930'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -52,11 +54,12 @@ requires:
   App::Prove: 3.11
   Carp::Assert::More: 1.12
   Cwd: 3.12
-  Devel::Cover: 0.64
+  Devel::Cover: 0.74
   File::Path: 1.07
   File::Slurp: 9999.13
   FindBin: 1.47
   Getopt::Long: 2.36
+  JSON: 2.17
   Params::Validate: 0.88
   Pod::Usage: 1.35
   Storable: 2.15

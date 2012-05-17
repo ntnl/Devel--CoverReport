@@ -1,4 +1,4 @@
-# Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
+# Copyright 2009-2012, Bartłomiej Syguła (perl@bs502.pl)
 #
 # This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 #
@@ -9,9 +9,9 @@ package Devel::CoverReport::App::CoverReport;
 use strict;
 use warnings;
 
-our $VERSION = 0.04;
+our $VERSION = "0.05";
 
-use Devel::CoverReport 0.04;
+use Devel::CoverReport 0.05;
 
 use Carp;
 use Getopt::Long 2.36 qw( GetOptionsFromArray );
@@ -240,7 +240,7 @@ sub cover_run_options { # {{{
 
 =head1 LICENCE
 
-Copyright 2009-2011, Bartłomiej Syguła (perl@bs502.pl)
+Copyright 2009-2012, Bartłomiej Syguła (perl@bs502.pl)
 
 This is free software. It is licensed, and can be distributed under the same terms as Perl itself.
 

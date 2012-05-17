@@ -515,4 +515,4 @@ data:
             v: ~
 metadata: 
   title: "Coverage: t/Baz-b.t"
-  version: 0.04
+  version: 0.05

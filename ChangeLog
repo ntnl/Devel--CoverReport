@@ -1,6 +1,13 @@
 Devel::CoverReport.pm history
 
-Release 0.04 - ...
+Release 0.05 - 17 Aug 2011
+
+ - Bugfix: Improved t/70-Devel-CoverReport-App-ProveCover.t
+    Devel::Cover seems to have some issues, when not re-compiled.
+    This results in it not doing any coverage dump, but it's not
+    a Devel::CoverReport problem, so check for this was removed.
+
+Release 0.04 - 25 Jul 2011
  - Added: display VCS information, and revision/commit coverage (BETA quality)
  - Added: support for Subversion VCS (BETA quality)
  - Added: support for GIT VCS (BETA quality)

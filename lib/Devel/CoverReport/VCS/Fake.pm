@@ -8,7 +8,7 @@ package Devel::CoverReport::VCS::Fake;
 
 use strict; use warnings;
 
-our $VERSION = 0.04;
+our $VERSION = "0.05";
 
 use Carp::Assert::More qw( assert_defined );
 use File::Slurp qw( read_file );
